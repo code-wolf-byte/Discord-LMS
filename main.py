@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from stuff.move import Utilities
+from move import Utilities
 print(discord.__version__)
 
 client = commands.Bot(command_prefix='!',)
