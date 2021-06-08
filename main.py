@@ -1,12 +1,19 @@
 import discord
 from discord.ext import commands
+import asyncio
+import ast
+def perms_to_move():
+    async def predicate(ctx):
+        if ctx.author.guild_permissions.move_members:
+            return True
+        else:
+            await ctx.send(f"Sorry you don't have permissions for that, {ctx.author.mention}")
 
-
+    return commands.check(predicate)
 
 class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -41,12 +48,11 @@ class Utilities(commands.Cog):
                 return True
         return False
 
-    def _get_channel(self, server, chname: str) :
+    def _get_channel(self, server, chname: str):
         for channel in server.channels:
             if type(channel) is discord.channel.VoiceChannel and chname.lower() in channel.name.lower():
                 return channel
         return None
-
 
     async def _mbr_helper(self, server, role_name: str, src_channel, dst_channel) -> None:
         role = self._get_role(server, role_name)
@@ -62,32 +68,25 @@ class Utilities(commands.Cog):
                 return role
         return None
 
-
-
-########################################################################################################################
-
+    ########################################################################################################################
 
     @commands.command()
-    async def send(self,ctx, member: discord.Member, *, content):
+    async def send(self, ctx, member: discord.Member, *, content):
         server = ctx.message.guild
         print(server.name)
         channel = await member.create_dm()
         await channel.send(content)
 
     @commands.command()
-    async def send_dm(self, ctx, member: discord.Member, * , content):
+    async def send_dm(self, ctx, member: discord.Member, *, content):
         server = ctx.message.guild
         url = ctx.message.attachments[0].url
-        url_split = url.split('/')
-        file_name = url_split.pop()
-        file = requests.get(url)
-        print(file_name)
-        print(server.name)
 
+        print(server.name)
         channel = await member.create_dm()
-        send = "============================================ \n"+"From:"+ ctx.author.name+"  at  "+ctx.guild.name + '\n' + content + "\n ============================================ "
+        send = "============================================ \n" + "From:" + ctx.author.name + "  at  " + ctx.guild.name + '\n' +url+ "\n ============================================ "
         await channel.send(send)
-        await channel.send(discord.file(file))
+
 
     @commands.command()
     async def verify(self, ctx):
@@ -115,7 +114,7 @@ class Utilities(commands.Cog):
                 txt = msg.content
                 data[user_id] = txt
                 wrt = str(data)
-                file = open('data.txt','w')
+                file = open('data.txt', 'w')
                 file.write(wrt)
                 file.close()
                 await member.edit(nick=txt)
@@ -133,11 +132,11 @@ async def nuke(ctx, channel: discord.TextChannel = None):
     nuke_channel = discord.utils.get(ctx.guild.channels, name=channel.name)
 
     if nuke_channel is not None:
-        new_channel = await nuke_channel.clone(reason="Has been Nuked!")
+        await nuke_channel.clone(reason="Has been Nuked!")
         await nuke_channel.delete()
 
     @commands.command()
-    async def info(self,ctx,user):
+    async def info(self, ctx, user):
         server = ctx.message.guild
         members = server.members
         for member in members:
@@ -145,35 +144,33 @@ async def nuke(ctx, channel: discord.TextChannel = None):
                 await ctx.channel.send(member)
 
     @commands.command()
-    async def assignment(self,ctx,*name):
+    async def assignment(self, ctx, *name):
         server = ctx.message.guild
         ch = ''
         for n in name:
-            ch= ch +n
-            ch= ch+'-'
+            ch = ch + n
+            ch = ch + '-'
         bot_channel = discord.utils.get(ctx.guild.channels, name='assignment-issue')
         await bot_channel.clone(name=ch)
         channel = discord.utils.get(ctx.guild.channels, name='assignment-issue')
-        await channel.clone(name=ch+'-submission')
+        await channel.clone(name=ch + '-submission')
 
     @commands.command()
-    async def check(self,ctx,*name):
+    async def check(self, ctx, *name):
         ch = ''
         for n in name:
             ch = ch + n
             ch = ch + ' '
 
     @commands.command()
-    async def status(self,ctx,*name):
+    async def status(self, ctx, *name):
         server = ctx.message.guild
         ch = ''
         for n in name:
             ch = ch + n
             ch = ch + '-'
-        ch= ch+'-submission'
+        ch = ch + '-submission'
         channel = discord.utils.get(ctx.guild.channels, name=ch)
-        
-
 
     @commands.command()
     async def move(self, ctx, role_name: str, dst_name: str):
@@ -194,23 +191,24 @@ async def nuke(ctx, channel: discord.TextChannel = None):
                         await member.move_to(dst_channel)
 
     @commands.command()
-    async def attendence(self,ctx,role_name:str,chn_name:str):
+    async def attendence(self, ctx, role_name: str, chn_name: str):
         server = ctx.message.guild
         dst_channel = self._get_channel(server, chn_name)
         got_role = self._get_role(server, role_name)
         members = server.members
         ch = 'attendence-log'
         channel = discord.utils.get(server.channels, name=ch)
-        str = "Attendence requested by "+ ctx.message.author.name +" at "+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        str = "Attendence requested by " + ctx.message.author.name + " at " + datetime.datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S")
         for member in members:
-            if (member.voice is not None and member.voice.channel == dst_channel and not member.voice.afk ):
+            if (member.voice is not None and member.voice.channel == dst_channel and not member.voice.afk):
                 for role in member.roles:
                     if role == got_role:
                         print(member.nick)
                         str = str.append(member.nick)
         await channel.send(str)
-#########################################################################################################################
 
+    #########################################################################################################################
 
     def reaction_add_check(self, reaction, user):
         requirements = \
@@ -228,6 +226,7 @@ async def nuke(ctx, channel: discord.TextChannel = None):
         if self.reaction_add_check(reaction, user):
             def check(r, u):
                 return r.emoji == EMOJI and u == user and r.message.id in self.message_to_channel
+
             try:
                 next_reaction, _ = await self.bot.wait_for('reaction_add', check=check, timeout=3)
                 dst_channel = self.bot.get_channel(self.message_to_channel[next_reaction.message.id])
@@ -242,10 +241,6 @@ async def nuke(ctx, channel: discord.TextChannel = None):
             await next_reaction.message.remove_reaction(EMOJI, user)
             print(f"{user.display_name}/{user.name} moved everyone from {src_channel.name} to {dst_channel.name}")
 
-
-
-##############################################################################################
-
 print(discord.__version__)
 
 client = commands.Bot(command_prefix='!',)
@@ -258,12 +253,4 @@ client.run("ODM2MzcwODYxNTQ4MTA5ODk0.YIdBEA.3jW1_FAMPFePnMvcj9eVaFU2d8U")
 
 
 
-def perms_to_move():
-    async def predicate(ctx):
-        if ctx.author.guild_permissions.move_members:
-            return True
-        else:
-            await ctx.send(f"Sorry you don't have permissions for that, {ctx.author.mention}")
-
-    return commands.check(predicate)
 
