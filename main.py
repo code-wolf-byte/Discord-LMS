@@ -248,7 +248,7 @@ client = commands.Bot(command_prefix='!',)
 client.add_cog(Utilities(client))
 
 
-client.run("ODM2MzcwODYxNTQ4MTA5ODk0.YIdBEA.3jW1_FAMPFePnMvcj9eVaFU2d8U")
+client.run("")
 
 
 
